@@ -19,7 +19,7 @@ def safe_get(url, params=None, headers=None):
             time.sleep(RETRY_DELAY)
     return None
 
-def build_params(issns, query, date_from=None, date_to=None, rows=100, offset=0):
+def build_params(issn, query, date_from=None, date_to=None, rows=100, offset=0):
     """
     Формирует словарь параметров для запроса в CrossRef API.
     Поддерживает:
@@ -28,8 +28,8 @@ def build_params(issns, query, date_from=None, date_to=None, rows=100, offset=0)
       - пагинацию (rows, offset)
     """
     filters = []
-    if issns:
-        filters.append("issn:" + ",".join(issns))
+    if issn:
+        filters.append("issn:" + issn)
     if date_from:
         filters.append("from-pub-date:" + date_from.split("T")[0])
     if date_to:
@@ -43,7 +43,7 @@ def build_params(issns, query, date_from=None, date_to=None, rows=100, offset=0)
     # убираем None, чтобы не отправлять пустые параметры
     return {k:v for k,v in params.items() if v is not None}
 
-def fetch_for_keyword(issns, keyword, date_from, date_to, rows=100):
+def fetch_for_keyword(issn, keyword, date_from, date_to, rows=100):
     """
     Выполняет поиск статей в CrossRef API по одному ключевому слову.
     Возвращает список публикаций (items).
@@ -53,7 +53,7 @@ def fetch_for_keyword(issns, keyword, date_from, date_to, rows=100):
     headers = {"User-Agent": USER_AGENT}
 
     while True:
-        params = build_params(issns, keyword, date_from, date_to, rows=rows, offset=offset)
+        params = build_params(issn, keyword, date_from, date_to, rows=rows, offset=offset)
         r = safe_get(CROSSREF_BASE, params=params, headers=headers)
         if r is None or r.status_code != 200:
             break
@@ -80,27 +80,26 @@ def fetch_for_keyword(issns, keyword, date_from, date_to, rows=100):
 
     return results
 
-def collect_unique_by_doi(issns, keywords, date_from, date_to, rows=100):
+def collect_unique_by_doi(issn, keywords, date_from, date_to, rows=100):
     """
     Главная функция модуля. Выполняет поиск по ISSN и ключевым словам.
     Результаты собираются в словарь по уникальным DOI.
     Если один и тот же DOI найден несколько раз, сохраняется запись с наибольшим количеством цитирований.
     """
-    by_doi = {}
-    for issn in issns:
-        for kw in keywords:
-            items = fetch_for_keyword([issn], kw, date_from, date_to, rows=rows)
-            for it in items:
-                doi = it.get("DOI", "")
-                if not doi:
-                    continue
+    doi_data = {}
+    for kw in keywords:
+        items = fetch_for_keyword(issn, kw, date_from, date_to, rows=rows)
+        for it in items:
+            doi = it.get("DOI", "")
+            if not doi:
+                continue
 
-                doi_norm = doi.strip().lower()
-                if doi_norm not in by_doi:
-                    by_doi[doi_norm] = it
-                else:
-                    # если встретился тот же DOI, обновляем запись,
-                    # если у новой версии больше цитирований
-                    if it.get("is-referenced-by-count", 0) > by_doi[doi_norm].get("is-referenced-by-count", 0):
-                        by_doi[doi_norm] = it
-    return by_doi
+            doi_norm = doi.strip().lower()
+            if doi_norm not in doi_data:
+                doi_data[doi_norm] = it
+            else:
+                # если встретился тот же DOI, обновляем запись,
+                # если у новой версии больше цитирований
+                if it.get("is-referenced-by-count", 0) > doi_data[doi_norm].get("is-referenced-by-count", 0):
+                    doi_data[doi_norm] = it
+    return doi_data
