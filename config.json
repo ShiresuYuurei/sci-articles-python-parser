@@ -1,0 +1,55 @@
+{
+  "issns": [
+  "2523-3246",
+  "1615-5262", "1615-5270",
+  "1687-4161",
+  "2263-8733"
+  ],
+  "journals": [
+    "Cybersecurity",
+    "International Journal of Information Security",
+    "Eurasip Journal on Information Security",
+    "Journal of Computer Virology and Hacking Techniques"
+  ],
+  "keywords": [
+    "Denial of Service",
+    "Distributed denial-of-service",
+    "DDoS",
+    "Low-rate denial of service",
+    "LDoS",
+    "Botnet",
+    "Detection Strategies",
+    "Network Intrusion Detection Systems",
+    "Anomaly Detection",
+    "Network traffic",
+    "Internet of things",
+    "Network security",
+    "Traffic Attacks",
+    "Cyber-security",
+    "IDS Dataset",
+    "Web Attack",
+    "Infiltration",
+    "Brute Force",
+    "Phishing detection",
+    "Intrusion detection",
+    "Malware detection",
+    "Cyber attack detection",
+    "Adversarial attacks",
+    "Attack prediction",
+    "Attack projection",
+    "Early-stage detection",
+    "Traffic analysis"
+  ],
+  "date_from": "2016-01-01",
+  "date_to": "2025-12-31",
+  "crossref_rows": 100,
+  "pirate_urls": [
+    "https://libgen.la/",
+    "https://sci-hub.ru/"
+  ],
+  "check_researchgate": true,
+  "output": {
+    "json": "results.json",
+    "excel": "results.xlsx"
+  }
+}
