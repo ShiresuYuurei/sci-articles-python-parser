@@ -1,17 +1,18 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from config import get_concurrency_settings
 from cache_manager import load_doi_cache, save_doi_cache
 
-def stage_collect_dois(issns: List, keywords: list, date_from: str,
-                       date_to: str, rows: int) -> Dict[str, Any]:
+def stage_collect_dois(issns: List[str], keywords: List[str],
+                       date_from: Optional[str], date_to: Optional[str],
+                       rows: int) -> Dict[str, Any]:
     from crossref_client import collect_unique_by_doi
 
     print("=== Stage 1: Collecting works by ISSNs ===")
     dois_data = {}
-    max_workers = get_concurrency_settings()
+    max_workers: int = get_concurrency_settings()
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
@@ -22,18 +23,17 @@ def stage_collect_dois(issns: List, keywords: list, date_from: str,
 
         with tqdm(total=len(futures), ncols=100) as pbar:
             for future in as_completed(futures):
-                doi_data = future.result()
+                doi_data: Dict[str, Any] = future.result()
                 dois_data.update(doi_data)
                 pbar.update(1)
 
     return dois_data
 
-def stage_process_dois(dois_data: Dict[str, Any], pirate_urls: list,
-                       check_rg: bool) -> List[Any]:
-
+def stage_process_dois(dois_data: Dict[str, Any], pirate_urls: List[str],
+                       check_rg: bool) -> List[Dict[str, Any]]:
     print("=== Stage 2: Processing DOIs ===")
     results = []
-    max_workers = get_concurrency_settings()
+    max_workers: int = get_concurrency_settings()
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
@@ -44,13 +44,13 @@ def stage_process_dois(dois_data: Dict[str, Any], pirate_urls: list,
 
         with tqdm(total=len(futures), ncols=100) as pbar:
             for future in as_completed(futures):
-                result = future.result()
+                result: Dict[str, Any] = future.result()
                 results.append(result)
                 pbar.update(1)
 
     return results
 
-def process_single_doi_item(doi: str, raw_data: Any, pirate_urls: list,
+def process_single_doi_item(doi: str, raw_data: Dict[str, Any], pirate_urls: List[str],
                             check_rg: bool) -> Dict[str, Any]:
     """
     Обрабатывает один DOI: проверяет доступность на сайте издателя, ResearchGate и пиратских ресурсах,
@@ -65,15 +65,14 @@ def process_single_doi_item(doi: str, raw_data: Any, pirate_urls: list,
     from availability_checker import publisher_availability, check_pirates, check_researchgate
     from utils import normalize_item
 
-    pub_av = publisher_availability(raw_data)
-    pirates = check_pirates(doi, pirate_urls) if pirate_urls else {"pirates_any": False, "pirates": {}}
-    rg = check_researchgate(doi) if check_rg else "not_checked"
+    pub_av: Dict[str, Any] = publisher_availability(raw_data)
+    pirates: Dict[str, Any] = check_pirates(doi, pirate_urls) if pirate_urls else {"pirates_any": False, "pirates": {}}
+    rg: str = check_researchgate(doi) if check_rg else "not_checked"
     return normalize_item(doi, raw_data, pub_av, pirates, rg)
 
-def process_dois(cfg: Dict[str, Any]) -> List[Any]:
-    cache_path = cfg.get("doi_cache_path", "cached_dois.json")
-
-    dois_data = load_doi_cache(cache_path)
+def process_dois(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
+    cache_path: str = cfg.get("doi_cache_path", "cached_dois.json")
+    dois_data: Dict[str, Any] = load_doi_cache(cache_path)
 
     if not dois_data:
         dois_data = stage_collect_dois(

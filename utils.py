@@ -1,4 +1,8 @@
-def normalize_item(doi, raw_data, pub_av, pirate_res, rg):
+from typing import Dict, Any, List
+
+def normalize_item(doi: str, raw_data: Dict[str, Any],
+                   pub_av: Dict[str, Any], pirate_res: Dict[str, Any],
+                   rg: str) -> Dict[str, Any]:
     """
     Приведение «сырых» данных о статье к единому формату для сохранения.
 
@@ -10,13 +14,13 @@ def normalize_item(doi, raw_data, pub_av, pirate_res, rg):
     :return: Словарь с единообразными полями (год публикации, авторы, название статьи и др.)
     """
     # Заголовок
-    title = raw_data.get("title", [""])[0] if raw_data.get("title") else ""
+    title: str = raw_data.get("title", [""])[0] if raw_data.get("title") else ""
 
     # Список авторов
     authors = []
     for a in raw_data.get("author", []):
-        g = a.get("given","").strip()
-        f = a.get("family","").strip()
+        g: str = a.get("given","").strip()
+        f: str = a.get("family","").strip()
         authors.append((g + " " + f).strip())
 
     # Определение года публикации
@@ -30,10 +34,10 @@ def normalize_item(doi, raw_data, pub_av, pirate_res, rg):
                 break
 
     # Количество цитирований
-    citations = raw_data.get("is-referenced-by-count", 0)
+    citations: int = raw_data.get("is-referenced-by-count", 0)
 
     # Ссылка на страницу статьи
-    url = raw_data.get("URL", "")
+    url: str = raw_data.get("URL", "")
 
     # Проверка пиратских ресурсов
     pirates_yesno = "yes" if pirate_res.get("pirates_any") else "no"

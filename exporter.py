@@ -1,9 +1,12 @@
-import json, pandas as pd
+import json
+import pandas as pd
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 from openpyxl import load_workbook
+from typing import List, Dict, Any, Optional
 
-def save(results_list, out_json=None, out_excel=None):
+def save(results_list: List[Dict[str, Any]],
+         out_json: Optional[str], out_excel: Optional[str]) -> None:
     """
     Сохраняет результаты работы парсера:
       - в JSON-файл (если указан out_json),
@@ -43,11 +46,11 @@ def save(results_list, out_json=None, out_excel=None):
         ws = wb.active
 
         for i, col in enumerate(ws.columns, start=1):
-            col_letter = get_column_letter(i)
-            header = ws.cell(row=1, column=i).value
+            col_letter: str = get_column_letter(i)
+            header: Optional[str] = ws.cell(row=1, column=i).value
 
             # Берём ширину из словаря или дефолтное значение
-            width = col_widths.get(header, 15)
+            width: int = col_widths.get(header, 15)
             ws.column_dimensions[col_letter].width = width
 
             # Выравнивание и перенос слов для всех ячеек
