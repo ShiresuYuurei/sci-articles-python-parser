@@ -11,7 +11,5 @@ def main(cfg_path="config.json"):
     # Этап 3: Сохранение результатов
     config.save_results(results, cfg)
 
-    print(f"Done. Total records: {len(results)}")
-
 if __name__ == "__main__":
     main()
