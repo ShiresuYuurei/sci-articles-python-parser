@@ -1,0 +1,11 @@
+.venv
+.env
+env/
+venv/
+ENV/
+
+*.log
+*.sqlite3
+*.db
+
+config.json
