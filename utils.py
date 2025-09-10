@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 def normalize_item(doi: str, raw_data: Dict[str, Any],
                    pub_av: Dict[str, Any], pirate_res: Dict[str, Any],
