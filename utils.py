@@ -1,4 +1,6 @@
-from typing import Dict, Any
+import os.path
+import subprocess
+from typing import Dict, Any, List
 
 def normalize_item(doi: str, raw_data: Dict[str, Any],
                    pub_av: Dict[str, Any], pirate_res: Dict[str, Any],
@@ -60,3 +62,34 @@ def normalize_item(doi: str, raw_data: Dict[str, Any],
         "researchgate": rg_status,
         "pirates": pirates_yesno
     }
+
+def open_folder_prompt(cfg: Dict[str, Any]) -> None:
+    """Функция для запроса открытия папки с результатом"""
+    outjson = cfg.get("output", {}).get("json", "")
+    outexcel = cfg.get("output", {}).get("excel", "")
+    try:
+        response = input("Open folder with results? (y/n): ").strip().lower()
+        if response in ('y', 'yes', 'д', 'да'):
+            file_path = outjson or outexcel
+            if file_path:
+                folder_path = os.path.dirname(os.path.abspath(file_path) or os.getcwd())
+                open_folder(folder_path)
+            else:
+                print("No output files specified in config.")
+        else:
+            print(f"Saved {outjson}, {outexcel}")
+    except (KeyboardInterrupt, EOFError):
+        print("\nOperation cancelled by user.")
+
+def open_folder(folder_path: str) -> None:
+    """Открывает папку в файловом менеджере системы"""
+    try:
+        if os.name == 'nt':
+            os.startfile(folder_path)
+        elif os.name == 'posix':
+            if os.uname().sysname == "Darwin":
+                subprocess.run(['open', folder_path], check=True)
+            else:
+                subprocess.run(['xdg-open', folder_path], check=True)
+    except Exception as e:
+        print(f"Could not open folder: {e}")

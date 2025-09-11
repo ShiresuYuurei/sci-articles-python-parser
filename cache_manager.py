@@ -1,7 +1,9 @@
 import json
 import os
 from typing import Dict, Any
+from decorators import stage_logger
 
+@stage_logger("Stage 2: Loading cached DOIs")
 def load_doi_cache(cache_path: str) -> Dict[str, Any]:
     if not os.path.exists(cache_path):
         return {}

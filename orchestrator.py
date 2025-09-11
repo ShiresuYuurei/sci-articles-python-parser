@@ -4,13 +4,14 @@ from typing import Dict, Any, List, Optional
 
 from config import get_concurrency_settings
 from cache_manager import load_doi_cache, save_doi_cache
+from decorators import stage_logger
 
+@stage_logger("Stage 2: Collecting DOIs")
 def stage_collect_dois(issns: List[str], keywords: List[str],
                        date_from: Optional[str], date_to: Optional[str],
                        rows: int) -> Dict[str, Any]:
     from crossref_client import collect_unique_by_doi
 
-    print("=== Stage 1: Collecting works by ISSNs ===")
     dois_data = {}
     max_workers: int = get_concurrency_settings()
 
@@ -29,9 +30,9 @@ def stage_collect_dois(issns: List[str], keywords: List[str],
 
     return dois_data
 
+@stage_logger("Stage 3: Processing DOIs")
 def stage_process_dois(dois_data: Dict[str, Any], pirate_urls: List[str],
                        check_rg: bool) -> List[Dict[str, Any]]:
-    print("=== Stage 2: Processing DOIs ===")
     results = []
     max_workers: int = get_concurrency_settings()
 
