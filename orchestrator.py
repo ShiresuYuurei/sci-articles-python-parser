@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Optional
 from config import get_concurrency_settings
 from cache_manager import load_doi_cache, save_doi_cache
 from decorators import stage_logger
+import os
 
 @stage_logger("Stage 2: Collecting DOIs")
 def stage_collect_dois(issns: List[str], keywords: List[str],

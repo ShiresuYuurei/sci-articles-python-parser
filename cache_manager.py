@@ -3,12 +3,16 @@ import os
 from typing import Dict, Any
 from decorators import stage_logger
 
-@stage_logger("Stage 2: Loading cached DOIs")
+@stage_logger("Stage 2: Checking cached DOIs")
 def load_doi_cache(cache_path: str) -> Dict[str, Any]:
     if not os.path.exists(cache_path):
         return {}
 
     print(f"Loading cached DOIs from {cache_path}")
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(cache_path)), exist_ok=True)
+    except IOError as e:
+        print(f"Error: Could not save cache DOI to {cache_path}. Error: {e}")
     try:
         with open(cache_path, "r", encoding="utf-8") as f:
             return json.load(f)

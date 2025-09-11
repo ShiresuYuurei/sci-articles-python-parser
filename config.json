@@ -38,5 +38,5 @@
     "json": "../results/results.json",
     "excel": "../results/results.xlsx"
   },
-  "doi_cache_path": "cached_dois.json"
+  "doi_cache_path": "../results/cache/cached_dois.json"
 }
