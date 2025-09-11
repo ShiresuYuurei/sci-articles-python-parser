@@ -109,6 +109,6 @@ def collect_unique_by_doi(issn: str, keywords: List[str],
             else:
                 # если встретился тот же DOI, обновляем запись,
                 # если у новой версии больше цитирований
-                if it.get("is-referenced-by-count", 0) > doi_data[doi_norm].get("is-referenced-by-count", 0):
+                if it.get("reference-count", 0) > doi_data[doi_norm].get("reference-count", 0):
                     doi_data[doi_norm] = it
     return doi_data

@@ -69,7 +69,7 @@ def process_single_doi_item(doi: str, raw_data: Dict[str, Any], pirate_urls: Lis
 
     pub_av: Dict[str, Any] = publisher_availability(raw_data)
     pirates: Dict[str, Any] = check_pirates(doi, pirate_urls) if pirate_urls else {"pirates_any": False, "pirates": {}}
-    rg: str = check_researchgate(doi) if check_rg else "not_checked"
+    rg: str = check_researchgate(raw_data.get("title", "")[0], doi) if check_rg else "not_checked"
     return normalize_item(doi, raw_data, pub_av, pirates, rg)
 
 def process_dois(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:

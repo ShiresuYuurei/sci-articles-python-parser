@@ -36,7 +36,7 @@ def normalize_item(doi: str, raw_data: Dict[str, Any],
                 break
 
     # Количество цитирований
-    citations: int = raw_data.get("is-referenced-by-count", 0)
+    citations: int = raw_data.get("reference-count", 0)
 
     # Ссылка на страницу статьи
     url: str = raw_data.get("URL", "")
@@ -48,7 +48,7 @@ def normalize_item(doi: str, raw_data: Dict[str, Any],
     rg_status = "no"
     if rg == "yes":
         rg_status = "yes"
-    elif rg in ("maybe", "unknown"):
+    elif rg == "unknown":
         rg_status = "maybe"
 
     return {
@@ -58,7 +58,7 @@ def normalize_item(doi: str, raw_data: Dict[str, Any],
         "doi": doi,
         "citations": citations,
         "link": url,
-        "available_on_site": "yes" if pub_av.get("publisher_pdf") or pub_av.get("open_access") else "no",
+        "available_on_site": "yes" if pub_av.get("publisher_pdf") else "no",
         "researchgate": rg_status,
         "pirates": pirates_yesno
     }

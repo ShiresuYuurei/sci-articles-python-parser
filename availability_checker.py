@@ -1,10 +1,16 @@
 import requests
 from urllib.parse import quote_plus
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, final
+from decorators import retry_on_failure
+from playwright_utils import BrowserSession
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+import time
+import random
 
 REQUEST_TIMEOUT = 3
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; CyberParser/1.0)"}
 
+@retry_on_failure()
 def publisher_availability(item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Проверяет доступность статьи на сайте издателя.
@@ -13,18 +19,40 @@ def publisher_availability(item: Dict[str, Any]) -> Dict[str, Any]:
       - open_access: опубликована ли статья в открытом доступе
       - publisher_links: список доступных ссылок от издателя
     """
-    links: List[Dict[str, str]] = item.get("link", [])
-    has_pdf = False
-    for l in links:
-        url: str = l.get("URL","").lower()
-        ctype: str = (l.get("content-type") or "").lower()
-        if "pdf" in ctype or url.endswith(".pdf"):
-            has_pdf = True
-            break
-    # Проверяем, есть ли у статьи лицензия (признак Открытого доступа)
-    is_open = bool(item.get("license"))
-    return {"publisher_pdf": has_pdf, "open_access": is_open, "publisher_links": links}
+    links = item.get("link", [])
+    pdf_links = [
+        l for l in links
+        if l.get("URL", "").lower().endswith(".pdf")
+        or "pdf" in l.get("content-type", "").lower()
+    ]
 
+    has_pdf = False
+
+    if pdf_links:
+        with BrowserSession(headless=False) as session:
+            page = session.context.new_page()
+
+            for l in pdf_links:
+                url = l.get("URL", "").strip()
+                if not url:
+                    continue
+                try:
+                    page.goto(url, timeout=20000, wait_until="domcontentloaded")
+
+                    final_url = page.url.strip()
+
+                    if final_url.lower() == url.lower():
+                        has_pdf = True
+                        break
+                except Exception as e:
+                    continue
+
+    return {
+        "publisher_pdf": has_pdf,
+        "publisher_links": links
+    }
+
+@retry_on_failure()
 def check_pirates(doi: str, pirate_bases: Optional[List[str]]) -> Dict[str, Any]:
     """
     Проверяет наличие статьи по DOI на пиратских ресурсах.
@@ -69,7 +97,8 @@ def check_pirates(doi: str, pirate_bases: Optional[List[str]]) -> Dict[str, Any]
 
     return {"pirates": details, "pirates_any": found_any}
 
-def check_researchgate(doi: str) -> str:
+@retry_on_failure()
+def check_researchgate(title: str, doi: str) -> str:
     """
     Проверяет наличие статьи по DOI на ResearchGate.
     Возможные результаты:
@@ -77,13 +106,24 @@ def check_researchgate(doi: str) -> str:
       - "maybe": страница открылась, но DOI не найден в HTML
       - "unknown": ошибка или сайт недоступен
     """
-    url = f"https://www.researchgate.net/search/publication?q={quote_plus(doi)}"
-    try:
-        r: requests.Response = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
-        if r.status_code == 200 and doi.lower() in r.text.lower():
-            return "yes"
-        if r.status_code == 200:
-            return "maybe"
-    except (requests.RequestException, ConnectionError, TimeoutError):
-        pass
-    return "unknown"
+    with BrowserSession(headless=False) as session:
+        try:
+            page = session.context.new_page()
+            url = f"https://www.researchgate.net/search/publication?q={quote_plus(title)}"
+
+            time.sleep(random.uniform(0.1, 0.3))
+
+            page.goto(url, timeout=40000)
+            page.wait_for_selector(".nova-legacy-v-publication-item__stack", timeout=20000)
+
+            content = page.content().lower()
+
+            if doi.lower() in content:
+                return "yes"
+            else:
+                return "no"
+        except PlaywrightTimeoutError:
+            return "unknown"
+        except Exception as e:
+            print(f"Error checking ResearchGate for {doi}: {e}")
+            return "unknown"
